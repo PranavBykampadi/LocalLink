@@ -1,0 +1,23 @@
+<!-- templates/index.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UberLand</title>
+</head>
+<body>
+    <h1>Welcome to UberLand</h1>
+    <form action="/calculate" method="POST">
+        <label for="start_location">Start Location:</label>
+        <input type="text" id="start_location" name="start_location" required>
+        <br>
+        <label for="end_location">End Location:</label>
+        <input type="text" id="end_location" name="end_location" required>
+        <br>
+        <button type="submit">Calculate Fastest Route</button>
+    </form>
+    <!-- Display results here -->
+</body>
+</html>
