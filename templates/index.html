@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LocalLinks</title>
     
-    <!-- Add your Google Maps API key and the Places library -->
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAskxa9jT-f88ez7gOcB4ybzWGITUQoNts&libraries=places,directions,geometry"></script>
     <link rel="stylesheet" href="styles.css">
 
@@ -67,7 +66,6 @@
         endAutocomplete.addListener('place_changed', function () {
             var place = endAutocomplete.getPlace();
             if (!place.geometry) {
-                // User entered a place that doesn't exist
                 endLocationInput.value = '';
                 return;
             }
@@ -91,10 +89,10 @@
             }
 
             if (startToTransitPolyline) {
-                map.removeLayer(startToTransitPolyline); // Remove previous start to transit polyline
+                map.removeLayer(startToTransitPolyline); // Removing previous start to transit polyline
             }
             if (transitToEndPolyline) {
-                map.removeLayer(transitToEndPolyline); // Remove previous transit to end polyline
+                map.removeLayer(transitToEndPolyline); // Removing previous transit to end polyline
             }
 
 
@@ -112,7 +110,7 @@
                 return response.json();
             })
             .then(function (data) {
-                // Display the map route and itinerary
+                // Displaying the map route and itinerary
                 displayRouteAndItinerary(data);
             });
         });
@@ -128,10 +126,10 @@
             }
 
             if (startToTransitPolyline) {
-                map.removeLayer(startToTransitPolyline); // Remove previous start to transit polyline
+                map.removeLayer(startToTransitPolyline); // Removing previous start to transit polyline
             }
             if (transitToEndPolyline) {
-                map.removeLayer(transitToEndPolyline); // Remove previous transit to end polyline
+                map.removeLayer(transitToEndPolyline); // Removing previous transit to end polyline
             }
 
                 fetch('/calculateCheapest', {
@@ -148,25 +146,25 @@
                     return response.json();
                 })
                 .then(function (data) {
-                    // Display the map route and itinerary for the cheapest route
+                    // Displaying the map route and itinerary for the cheapest route
                     displayRouteAndItinerary(data);
                 });
             });
 
 
         function displayRouteAndItinerary(data) {
-            // Get polyline data from your JSON response
+            // Getting polyline data from the JSON response
             const startToTransitPolylineData = data.start_to_transit_uber.transit_data.overview_polyline.points;
             const transitToMidPolylineData = data.transit_data.overview_polyline.points;
             const midToEndPolylineData = data.transit_to_end_uber.transit_data.overview_polyline.points;
 
-            // Decode polyline data to get coordinates
+            // Decoding polyline data to get coordinates
             const startToTransitCoords = polyline.decode(startToTransitPolylineData);
             const transitToMidCoords = polyline.decode(transitToMidPolylineData);
             const midToEndCoords = polyline.decode(midToEndPolylineData);
             console.log('pts', startToTransitPolylineData, transitToMidPolylineData, midToEndPolylineData)
 
-            // Create polyline objects and add them to the map with different colors
+            // Creating polyline objects and add them to the map with different colors
             startToTransitPolyline = L.polyline(startToTransitCoords, { color: 'blue' }).addTo(map);
             transitToMidPolyline = L.polyline(transitToMidCoords, { color: 'green' }).addTo(map);
             midToEndPolyline = L.polyline(midToEndCoords, { color: 'red' }).addTo(map);
@@ -174,12 +172,18 @@
             // Zoom and pan the map to fit all polylines
             map.fitBounds(startToTransitPolyline.getBounds().extend(transitToMidPolyline.getBounds()).extend(midToEndPolyline.getBounds()));
 
-            const itineraryHTML = "<h2>Itinerary:</h2>";
-            
+            const itineraryHTML = `
+                <h2>Itinerary:</h2>
+                <p><strong>Start Location:</strong> ${data.start_to_transit_uber.start_location.place}</p>
+                <p><strong>End Location:</strong> ${data.transit_to_end_uber.end_location.place}</p>
+                <p><strong>Total Transit Duration:</strong> ${data.transit_data.duration.text}</p>
+                <p><strong>Total Transit Distance:</strong> ${data.transit_data.distance.text}</p>
+                <p><strong>Uber from Start to Transit:</strong> $${data.start_to_transit_uber.estimated_cost}</p>
+                <p><strong>Uber from Transit to End:</strong> $${data.transit_to_end_uber.estimated_cost}</p>
+            `;
 
             document.querySelector('#itinerary').innerHTML = itineraryHTML;
         }
-
     </script>
 </body>
 </html>
