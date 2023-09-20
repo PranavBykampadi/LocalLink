@@ -14,7 +14,7 @@ sys.path.insert(0, project_root)
 # Configuration
 # Import configuration from config.py
 from config import google_maps_api_key, google_maps_directions_url, uber_estimate_url, uber_server_token, uber_client_id
-
+#config.py has not been pushed to the repo as it contains sensitive api keys, and this repo is to be made public. The remaining functionality has all been added to a single file to ensure simplicity
 # Create a Flask app
 app = Flask(__name__)
 app.config.from_object('config')
