@@ -1,15 +1,23 @@
-<!-- templates/index.html -->
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UberLand</title>
+    <title>LocalLinks</title>
+    
+    <!-- Add your Google Maps API key and the Places library -->
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAskxa9jT-f88ez7gOcB4ybzWGITUQoNts&libraries=places,directions,geometry"></script>
+    <link rel="stylesheet" href="styles.css">
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    
+    
 </head>
 <body>
-    <h1>Welcome to UberLand</h1>
-    <form action="/calculate" method="POST">
+    <h1>Welcome to LocalLinks</h1>
+    <form id="route-form">
         <label for="start_location">Start Location:</label>
         <input type="text" id="start_location" name="start_location" required>
         <br>
@@ -17,7 +25,161 @@
         <input type="text" id="end_location" name="end_location" required>
         <br>
         <button type="submit">Calculate Fastest Route</button>
+        <button id="cheapest-route-button" type="submit">Calculate Cheapest Route</button>
     </form>
-    <!-- Display results here -->
+    
+    <div id="map"></div>
+    
+    <div id="itinerary">
+        <!-- Itinerary details will be displayed here -->
+    </div>
+    
+    <script>
+        var map = L.map('map').setView([37.7749, -122.4194], 13); // Set initial map coordinates and zoom level
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+        var startMarker, endMarker;
+        var startLocation, endLocation;
+        var startToTransitPolyline, transitToEndPolyline; // Define polylines for different segments
+        var startLocationInput = document.querySelector('#start_location');
+        var endLocationInput = document.querySelector('#end_location');
+        var startToTransitPolyline, transitToMidPolyline, midToEndPolyline; // Define polylines for different segments
+
+        var startAutocomplete = new google.maps.places.Autocomplete(startLocationInput);
+        var endAutocomplete = new google.maps.places.Autocomplete(endLocationInput);
+
+        startAutocomplete.addListener('place_changed', function () {
+            var place = startAutocomplete.getPlace();
+            if (!place.geometry) {
+                // User entered a place that doesn't exist
+                startLocationInput.value = '';
+                return;
+            }
+            startLocation = {
+                place: place.formatted_address,
+                lat: place.geometry.location.lat(),
+                lng: place.geometry.location.lng()
+            };
+            console.log('Start Location:', startLocation);
+        });
+
+        endAutocomplete.addListener('place_changed', function () {
+            var place = endAutocomplete.getPlace();
+            if (!place.geometry) {
+                // User entered a place that doesn't exist
+                endLocationInput.value = '';
+                return;
+            }
+            endLocation = {
+                place: place.formatted_address,
+                lat: place.geometry.location.lat(),
+                lng: place.geometry.location.lng()
+            };
+
+            console.log('end', endLocation)
+        });
+        document.querySelector('#route-form').addEventListener('submit', function (e) {
+            e.preventDefault();
+
+
+            if (startMarker) {
+                map.removeLayer(startMarker);
+            }
+            if (endMarker) {
+                map.removeLayer(endMarker);
+            }
+
+            if (startToTransitPolyline) {
+                map.removeLayer(startToTransitPolyline); // Remove previous start to transit polyline
+            }
+            if (transitToEndPolyline) {
+                map.removeLayer(transitToEndPolyline); // Remove previous transit to end polyline
+            }
+
+
+            fetch('/calculate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    start_location: startLocation,
+                    end_location: endLocation
+                })
+            })
+            .then(function (response) {
+                return response.json();
+            })
+            .then(function (data) {
+                // Display the map route and itinerary
+                displayRouteAndItinerary(data);
+            });
+        });
+
+        document.querySelector('#cheapest-route-button').addEventListener('click', function (e) {
+            e.preventDefault();
+
+            if (startMarker) {
+                map.removeLayer(startMarker);
+            }
+            if (endMarker) {
+                map.removeLayer(endMarker);
+            }
+
+            if (startToTransitPolyline) {
+                map.removeLayer(startToTransitPolyline); // Remove previous start to transit polyline
+            }
+            if (transitToEndPolyline) {
+                map.removeLayer(transitToEndPolyline); // Remove previous transit to end polyline
+            }
+
+                fetch('/calculateCheapest', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        start_location: startLocation,
+                        end_location: endLocation
+                    })
+                })
+                .then(function (response) {
+                    return response.json();
+                })
+                .then(function (data) {
+                    // Display the map route and itinerary for the cheapest route
+                    displayRouteAndItinerary(data);
+                });
+            });
+
+
+        function displayRouteAndItinerary(data) {
+            // Get polyline data from your JSON response
+            const startToTransitPolylineData = data.start_to_transit_uber.transit_data.overview_polyline.points;
+            const transitToMidPolylineData = data.transit_data.overview_polyline.points;
+            const midToEndPolylineData = data.transit_to_end_uber.transit_data.overview_polyline.points;
+
+            // Decode polyline data to get coordinates
+            const startToTransitCoords = polyline.decode(startToTransitPolylineData);
+            const transitToMidCoords = polyline.decode(transitToMidPolylineData);
+            const midToEndCoords = polyline.decode(midToEndPolylineData);
+            console.log('pts', startToTransitPolylineData, transitToMidPolylineData, midToEndPolylineData)
+
+            // Create polyline objects and add them to the map with different colors
+            startToTransitPolyline = L.polyline(startToTransitCoords, { color: 'blue' }).addTo(map);
+            transitToMidPolyline = L.polyline(transitToMidCoords, { color: 'green' }).addTo(map);
+            midToEndPolyline = L.polyline(midToEndCoords, { color: 'red' }).addTo(map);
+
+            // Zoom and pan the map to fit all polylines
+            map.fitBounds(startToTransitPolyline.getBounds().extend(transitToMidPolyline.getBounds()).extend(midToEndPolyline.getBounds()));
+
+            const itineraryHTML = "<h2>Itinerary:</h2>";
+            
+
+            document.querySelector('#itinerary').innerHTML = itineraryHTML;
+        }
+
+    </script>
 </body>
 </html>
