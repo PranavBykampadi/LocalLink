@@ -32,7 +32,16 @@
     <div id="itinerary">
         <!-- Itinerary details will be displayed here -->
     </div>
-    
+    div id="legend">
+        <div class="legend-item">
+          <div class="legend-color" style="background-color: blue;"></div>
+          Uber Distance
+        </div>
+        <div class="legend-item">
+          <div class="legend-color" style="background-color: red;"></div>
+          Public Transit
+        </div>
+      </div>
     <script>
         var map = L.map('map').setView([37.7749, -122.4194], 13); // Set initial map coordinates and zoom level
 
@@ -166,8 +175,8 @@
 
             // Creating polyline objects and add them to the map with different colors
             startToTransitPolyline = L.polyline(startToTransitCoords, { color: 'blue' }).addTo(map);
-            transitToMidPolyline = L.polyline(transitToMidCoords, { color: 'green' }).addTo(map);
-            midToEndPolyline = L.polyline(midToEndCoords, { color: 'red' }).addTo(map);
+            transitToMidPolyline = L.polyline(transitToMidCoords, { color: 'red' }).addTo(map);
+            midToEndPolyline = L.polyline(midToEndCoords, { color: 'blue' }).addTo(map);
 
             // Zoom and pan the map to fit all polylines
             map.fitBounds(startToTransitPolyline.getBounds().extend(transitToMidPolyline.getBounds()).extend(midToEndPolyline.getBounds()));
@@ -178,8 +187,8 @@
                 <p><strong>End Location:</strong> ${data.transit_to_end_uber.end_location.place}</p>
                 <p><strong>Total Transit Duration:</strong> ${data.transit_data.duration.text}</p>
                 <p><strong>Total Transit Distance:</strong> ${data.transit_data.distance.text}</p>
-                <p><strong>Uber from Start to Transit:</strong> $${data.start_to_transit_uber.estimated_cost}</p>
-                <p><strong>Uber from Transit to End:</strong> $${data.transit_to_end_uber.estimated_cost}</p>
+                <p><strong>Uber from Start to Transit:</strong> $${data.start_to_transit_uber.ride_details}</p>
+                <p><strong>Uber from Transit to End:</strong> $${data.transit_to_end_uber.ride_details}</p>
             `;
 
             document.querySelector('#itinerary').innerHTML = itineraryHTML;
